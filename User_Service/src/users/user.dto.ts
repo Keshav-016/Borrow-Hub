@@ -71,3 +71,13 @@ export class UpdateUserDto {
   @IsOptional()
   role?: string;
 }
+
+export class userLoginDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+  
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}

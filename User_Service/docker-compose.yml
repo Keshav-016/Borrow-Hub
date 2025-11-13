@@ -1,4 +1,18 @@
 services:
+  user-service:
+    build: 
+      context: .
+    ports:
+      - "3001:${PORT}"
+    environment:
+      - DATABASE_URL=${DOCKER_DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_TTL=${JWT_TTL}
+    depends_on:
+      - user-db
+    networks:
+      - borrow-hub-network
+
   user-db:
     image: postgres
     restart: always
@@ -7,3 +21,9 @@ services:
       POSTGRES_DB: user_service
     ports:
       - 5432:5432
+    networks:
+      - borrow-hub-network
+
+networks:
+  borrow-hub-network:
+    external: true

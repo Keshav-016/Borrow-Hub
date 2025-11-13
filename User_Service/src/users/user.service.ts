@@ -2,14 +2,16 @@ import { Injectable, NotFoundException, ConflictException } from '@nestjs/common
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto, UpdateUserDto } from './user.dto';
 import * as bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import Env from 'src/utils/Env';
 
 @Injectable()
 export class UserService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const existingUser = await this.prisma.user.findUnique({
-      where: { email: createUserDto.email },
+    const existingUser = await this.prisma.user.findFirst({
+      where: { email: { equals: createUserDto.email, mode: 'insensitive' } },
     });
 
     if (existingUser) {
@@ -46,8 +48,24 @@ export class UserService {
     return user;
   }
 
+  async login(email: string, password: string) {
+    if (!email || !password) {
+      throw new NotFoundException('Email and password are required');
+    }
+    const user = await this.prisma.user.findFirst({ where: { email:{equals:email, mode:'insensitive'} } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new NotFoundException('Invalid credentials');
+    }
+    const token = jwt.sign({ userId: user.id, role: user.role }, Env.JWT_SECRET, { expiresIn: Number(Env.JWT_TTL) });
+    return { user:user.name, token };
+  }
+
   async findByEmail(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findFirst({ where: { email:{equals:email, mode:'insensitive'} } });
     if (!user) {
       throw new NotFoundException('User not found');
     }

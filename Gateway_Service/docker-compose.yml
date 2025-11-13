@@ -1,0 +1,16 @@
+services:
+  gateway-service:
+    build: 
+      context: .
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - PORT=${PORT}
+      - USER_SERVICE_URL=${DOCKER_USER_SERVICE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+    networks:
+      - borrow-hub-network
+
+networks:
+  borrow-hub-network:
+    external: true
