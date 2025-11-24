@@ -1,3 +1,7 @@
+// ------------------------------------------------------
+// Catalog Service Prisma Schema (ToolLib)
+// ------------------------------------------------------
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -13,16 +17,16 @@ generator client {
 
 enum ItemStatus {
   AVAILABLE
-  UNAVAILABLE
-  PENDING_APPROVAL
+  RENTED
+  MAINTENANCE
   DELETED
 }
 
 enum ConditionTag {
-  NEW
+  EXCELLENT
   GOOD
-  USED
-  DAMAGED
+  FAIR
+  POOR
 }
 
 // ------------------------------------------------------
@@ -56,6 +60,7 @@ model Item {
   // Relations
   images           ItemImage[]
   availability     ItemAvailability[]
+  itemTags         ItemTagMap[]
   category         ItemCategory?   @relation(fields: [categoryId], references: [id])
 
   createdAt        DateTime        @default(now())
@@ -73,6 +78,8 @@ model ItemImage {
   uploadedAt  DateTime @default(now())
 
   item        Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
 }
 
 // ------------------------------------------------------
@@ -87,6 +94,8 @@ model ItemAvailability {
   isBooked    Boolean   @default(false)
 
   item        Item      @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
 }
 
 // ------------------------------------------------------
@@ -104,3 +113,23 @@ model ItemCategory {
   items       Item[]
 }
 
+// ------------------------------------------------------
+// TAGS (optional extension — for search/filter)
+// ------------------------------------------------------
+
+model ItemTag {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  itemTags  ItemTagMap[]
+}
+
+// Junction table between Item & Tag
+model ItemTagMap {
+  id      String   @id @default(uuid())
+  itemId  String
+  tagId   String
+
+  item    Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  tag     ItemTag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+}
